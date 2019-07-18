@@ -1,11 +1,13 @@
 import torch
 import torch.nn as nn
-from .model import Model
+import torch.nn.functional as F
+
+from segmentation_models.base.model import Model
 
 
 class EncoderDecoder(Model):
 
-    def __init__(self, encoder, decoder, activation):
+    def __init__(self, encoder, decoder, activation, **kwargs):
         super().__init__()
         self.encoder = encoder
         self.decoder = decoder

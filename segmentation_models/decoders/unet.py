@@ -2,8 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from ..common.blocks import Conv2dReLU
-from ..base.model import Model
+from segmentation_models.common.blocks import Conv2dReLU
+from segmentation_models.base.model import Model
 
 
 class DecoderBlock(nn.Module):

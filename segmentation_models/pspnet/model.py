@@ -1,5 +1,5 @@
-from .decoder import PSPDecoder
-from ..base import EncoderDecoder
+from segmentation_models.decoders.pspnet import PSPDecoder
+from segmentation_models.encoder_decoder.base import EncoderDecoder
 from ..encoders import get_encoder
 
 
@@ -55,6 +55,6 @@ class PSPNet(EncoderDecoder):
             use_batchnorm=psp_use_batchnorm,
         )
 
-        super().__init__(encoder, decoder, activation)
+        super().__init__(encoder, decoder, activation, classes=classes)
 
         self.name = 'psp-{}'.format(encoder_name)

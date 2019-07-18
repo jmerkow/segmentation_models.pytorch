@@ -1,5 +1,5 @@
-from .decoder import FPNDecoder
-from ..base import EncoderDecoder
+from segmentation_models.decoders.fpn import FPNDecoder
+from segmentation_models.encoder_decoder.base import EncoderDecoder
 from ..encoders import get_encoder
 
 
@@ -41,12 +41,13 @@ class FPN(EncoderDecoder):
 
         decoder = FPNDecoder(
             encoder_channels=encoder.out_shapes,
+            
             pyramid_channels=decoder_pyramid_channels,
             segmentation_channels=decoder_segmentation_channels,
             final_channels=classes,
             dropout=dropout,
         )
 
-        super().__init__(encoder, decoder, activation)
+        super().__init__(encoder, decoder, activation, classes=classes)
 
         self.name = 'fpn-{}'.format(encoder_name)

@@ -8,7 +8,7 @@ import random
 # mock detection module 
 sys.modules['torchvision._C'] = mock.Mock()
 
-import segmentation_models_pytorch as smp
+import segmentation_models as smp
 
 
 def get_encoder():

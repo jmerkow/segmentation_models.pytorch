@@ -1,10 +1,8 @@
+from segmentation_models.base.model import Model
+from segmentation_models.common.blocks import Conv2dReLU
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-from ..base.model import Model
-from ..common.blocks import Conv2dReLU
-
 
 def _upsample(x, size):
     return F.interpolate(x, size=size, mode='bilinear', align_corners=True)

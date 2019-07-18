@@ -1,8 +1,8 @@
+from segmentation_models.base.model import Model
+from segmentation_models.common.blocks import Conv2dReLU
+import torch
 import torch.nn as nn
-
-from ..common.blocks import Conv2dReLU
-from ..base.model import Model
-
+import torch.nn.functional as F
 
 class TransposeX2(nn.Module):
 

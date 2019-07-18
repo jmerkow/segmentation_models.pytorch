@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, print_function
+
 import torch.nn as nn
 from . import functions as F
 
@@ -29,3 +32,12 @@ class FscoreMetric(nn.Module):
 
     def forward(self, y_pr, y_gt):
         return F.f_score(y_pr, y_gt, self.beta, self.eps, self.threshold, self.activation)
+
+
+class DICEMetric(IoUMetric):
+
+    __name__ = 'dice'
+
+    def forward(self, y_pr, y_gt):
+        IoU = super(DICEMetric, self). forward(y_pr, y_gt)
+        return (2. * IoU) / (1. + IoU)

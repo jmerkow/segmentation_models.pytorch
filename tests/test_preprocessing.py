@@ -7,7 +7,7 @@ import numpy as np
 # mock detection module 
 sys.modules['torchvision._C'] = mock.Mock()
 
-import segmentation_models_pytorch as smp
+import segmentation_models as smp
 
 
 def _test_preprocessing(inp, out, **params):

@@ -1,9 +1,7 @@
+from segmentation_models.base.model import Model
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-from ..base.model import Model
-
 
 class Conv3x3GNReLU(nn.Module):
     def __init__(self, in_channels, out_channels, upsample=False):
@@ -22,7 +20,6 @@ class Conv3x3GNReLU(nn.Module):
         if self.upsample:
             x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
         return x
-
 
 
 class FPNBlock(nn.Module):

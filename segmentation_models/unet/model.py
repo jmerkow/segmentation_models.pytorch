@@ -1,29 +1,29 @@
-from .decoder import LinknetDecoder
-from ..base import EncoderDecoder
+from segmentation_models.decoders.unet import UnetDecoder
+from segmentation_models.encoder_decoder.base import EncoderDecoder
 from ..encoders import get_encoder
 
 
-class Linknet(EncoderDecoder):
-    """Linknet_ is a fully convolution neural network for fast image semantic segmentation
-
-    Note:
-        This implementation by default has 4 skip connections (original - 3).
+class Unet(EncoderDecoder):
+    """Unet_ is a fully convolution neural network for image semantic segmentation
 
     Args:
         encoder_name: name of classification model (without last dense layers) used as feature
             extractor to build segmentation model.
         encoder_weights: one of ``None`` (random initialization), ``imagenet`` (pre-training on ImageNet).
+        decoder_channels: list of numbers of ``Conv2D`` layer filters in decoder blocks
         decoder_use_batchnorm: if ``True``, ``BatchNormalisation`` layer between ``Conv2D`` and ``Activation`` layers
             is used.
         classes: a number of classes for output (output shape - ``(batch, classes, h, w)``).
         activation: activation function used in ``.predict(x)`` method for inference.
             One of [``sigmoid``, ``softmax``, callable, None]
+        center: if ``True`` add ``Conv2dReLU`` block on encoder head (useful for VGG models)
 
     Returns:
-        ``torch.nn.Module``: **Linknet**
+        ``torch.nn.Module``: **Unet**
 
-    .. _Linknet:
-        https://arxiv.org/pdf/1707.03718.pdf
+    .. _Unet:
+        https://arxiv.org/pdf/1505.04597
+
     """
 
     def __init__(
@@ -31,21 +31,24 @@ class Linknet(EncoderDecoder):
             encoder_name='resnet34',
             encoder_weights='imagenet',
             decoder_use_batchnorm=True,
+            decoder_channels=(256, 128, 64, 32, 16),
             classes=1,
             activation='sigmoid',
+            center=False,  # usefull for VGG models
     ):
         encoder = get_encoder(
             encoder_name,
             encoder_weights=encoder_weights
         )
 
-        decoder = LinknetDecoder(
+        decoder = UnetDecoder(
             encoder_channels=encoder.out_shapes,
-            prefinal_channels=32,
+            decoder_channels=decoder_channels,
             final_channels=classes,
             use_batchnorm=decoder_use_batchnorm,
+            center=center,
         )
 
-        super().__init__(encoder, decoder, activation)
+        super().__init__(encoder, decoder, activation, classes=cl)
 
-        self.name = 'link-{}'.format(encoder_name)
+        self.name = 'u-{}'.format(encoder_name)
