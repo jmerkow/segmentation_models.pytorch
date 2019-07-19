@@ -1,7 +1,12 @@
+import torch.nn as nn
 from segmentation_models.encoder_decoder.base import EncoderDecoder
 from ..decoders import get_decoder_cls
 from ..encoders import get_encoder
 
+
+class Flatten(nn.Module):
+    def forward(self, input):
+        return input.reshape(input.size(0), -1)
 
 class SegmentationModel(EncoderDecoder):
     decoder_cls = None
@@ -10,6 +15,7 @@ class SegmentationModel(EncoderDecoder):
 
     def __init__(self, encoder_name='resnet34', activation='sigmoid',
                  encoder_weights="imagenet", classes=1,
+                 encoder_classify=False,
                  **decoder_kwargs):
         self.classes = classes
         encoder = get_encoder(
@@ -25,7 +31,56 @@ class SegmentationModel(EncoderDecoder):
             **defaults
         )
         super().__init__(encoder=encoder, decoder=decoder, activation=activation)
+
         self.name = self.name.format(encoder_name)
+        self.encoder_classify = encoder_classify
+        if self.encoder_classify:
+            self.encoder_classifier = nn.Sequential(
+                nn.AdaptiveAvgPool2d((1, 1)),
+                Flatten(),
+                nn.Linear(encoder.out_shapes[0], self.classes),
+            )
+            self.name += "-en_class"
+
+    def forward(self, x):
+        """Sequentially pass `x` trough model`s `encoder` and `decoder` (return logits!)"""
+        features = self.encoder(x)
+        mask = self.decoder(features)
+        if self.encoder_classify:
+            score = self.encoder_classifier(features[0])
+            return [mask, score]
+
+        return mask
+
+    def predict(self, x):
+        """Inference method. Switch model to `eval` mode, call `.forward(x)`
+        and apply activation function (if activation is not `None`) with `torch.no_grad()`
+
+        Args:
+            x: 4D torch tensor with shape (batch_size, channels, height, width)
+
+        Return:
+            prediction: 4D torch tensor with shape (batch_size, classes, height, width)
+
+        """
+        if self.training:
+            self.eval()
+
+        with torch.no_grad():
+            mask = self.forward(x)
+            score = None
+            if self.encoder_classify:
+                mask, score = mask
+            if self.activation:
+                mask = self.activation(mask)
+                if score:
+                    score = self.activation(score)
+            if self.encoder_classify:
+                x = [mask, score.unsqueeze(1)]
+            else:
+                x = mask
+
+        return x
 
 
 class UNet(SegmentationModel):
