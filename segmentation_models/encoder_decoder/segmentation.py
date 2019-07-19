@@ -1,4 +1,5 @@
 import torch.nn as nn
+
 from segmentation_models.encoder_decoder.base import EncoderDecoder
 from ..decoders import get_decoder_cls
 from ..encoders import get_encoder
@@ -8,18 +9,20 @@ class Flatten(nn.Module):
     def forward(self, input):
         return input.reshape(input.size(0), -1)
 
+
 class SegmentationModel(EncoderDecoder):
     decoder_cls = None
     decoder_defaults = {}
     name = "no-decodder-{}-{}"
 
-    def __init__(self, encoder_name='resnet34', activation='sigmoid',
+    def __init__(self, encoder='resnet34', activation='sigmoid',
                  encoder_weights="imagenet", classes=1,
                  encoder_classify=False,
                  **decoder_kwargs):
         self.classes = classes
+        encoder_name = encoder
         encoder = get_encoder(
-            encoder_name,
+            encoder,
             encoder_weights=encoder_weights
         )
 
@@ -40,7 +43,7 @@ class SegmentationModel(EncoderDecoder):
                 Flatten(),
                 nn.Linear(encoder.out_shapes[0], self.classes),
             )
-            self.name += "-en_class"
+            self.name += "-wclassifier"
 
     def forward(self, x):
         """Sequentially pass `x` trough model`s `encoder` and `decoder` (return logits!)"""
@@ -91,14 +94,13 @@ class UNet(SegmentationModel):
     name = 'unet-{}'
 
 
-
 class PSPNet(SegmentationModel):
     decoder_cls = get_decoder_cls('PSP')
     decoder_defaults = {'downsample_factor': 8,
- 'psp_out_channels': 512,
- 'use_batchnorm': True,
- 'aux_output': False,
- 'dropout': 0.2}
+                        'psp_out_channels': 512,
+                        'use_batchnorm': True,
+                        'aux_output': False,
+                        'dropout': 0.2}
     name = 'psp-{}'
 
 
@@ -107,11 +109,11 @@ class LinkNet(SegmentationModel):
     decoder_defaults = {'prefinal_channels': 32}
     name = 'link-{}'
 
+
 class FPN(SegmentationModel):
     decoder_cls = get_decoder_cls('FPN')
     decoder_defaults = {'pyramid_channels': 256, 'segmentation_channels': 128, 'dropout': 0.2}
     name = 'fpn-{}'
-
 
 # def get_segmententation_model(encoder_name='resnet34', decoder_name=None, decoder_kwargs=None,
 #                               activation='sigmoid',
