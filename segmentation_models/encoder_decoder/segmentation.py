@@ -37,6 +37,7 @@ class SegmentationModel(EncoderDecoder):
 
         self.name = self.name.format(encoder_name)
         self.encoder_classify = encoder_classify
+        self.encoder_classifier = None
         if self.encoder_classify:
             self.encoder_classifier = nn.Sequential(
                 nn.AdaptiveAvgPool2d((1, 1)),
@@ -52,7 +53,6 @@ class SegmentationModel(EncoderDecoder):
         if self.encoder_classify:
             score = self.encoder_classifier(features[0])
             return [mask, score]
-
         return mask
 
     def predict(self, x):
@@ -79,7 +79,7 @@ class SegmentationModel(EncoderDecoder):
                 if score:
                     score = self.activation(score)
             if self.encoder_classify:
-                x = [mask, score.unsqueeze(1)]
+                x = [mask, score]
             else:
                 x = mask
 
