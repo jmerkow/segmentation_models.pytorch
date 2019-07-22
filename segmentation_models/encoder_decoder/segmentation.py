@@ -1,8 +1,9 @@
+import torch
 import torch.nn as nn
 
 from segmentation_models.encoder_decoder.base import EncoderDecoder
 from ..decoders import get_decoder_cls
-from ..encoders import get_encoder
+from ..encoders import get_encoder, get_preprocessing_fn
 
 
 class Flatten(nn.Module):
@@ -17,17 +18,30 @@ class SegmentationModel(EncoderDecoder):
 
     def __init__(self, encoder='resnet34', activation='sigmoid',
                  encoder_weights="imagenet", classes=1,
-                 encoder_classify=False,
-                 **decoder_kwargs):
+                 encoder_classify=False, model_dir=None,
+                 decoder_params=None):
+        #
+        # self._init_kwargs = {'__class__': type(self),
+        #     'encoder': encoder_classify,
+        #     'activation': activation,
+        #     'encoder_weights': encoder_weights,
+        #     'classes': classes,
+        #     'encoder_classify': encoder_classify,
+        #     **decoder_kwargs,
+        # }
+
+        decoder_params = decoder_params or {}
+
         self.classes = classes
         encoder_name = encoder
         encoder = get_encoder(
             encoder,
-            encoder_weights=encoder_weights
+            encoder_weights=encoder_weights,
+            model_dir=model_dir
         )
 
         defaults = self.decoder_defaults.copy()
-        defaults.update(**decoder_kwargs)
+        defaults.update(**decoder_params)
         decoder = self.decoder_cls(
             encoder_channels=encoder.out_shapes,
             final_channels=classes,
@@ -114,6 +128,25 @@ class FPN(SegmentationModel):
     decoder_cls = get_decoder_cls('FPN')
     decoder_defaults = {'pyramid_channels': 256, 'segmentation_channels': 128, 'dropout': 0.2}
     name = 'fpn-{}'
+
+
+
+models_types = {
+    'unet': UNet,
+    'pspnet': PSPNet,
+    'linknet': LinkNet,
+    'fpn': FPN
+}
+
+def get_model(base, **model_params):
+    base = base.lower()
+    model_cls = models_types[base]
+    model = model_cls(**model_params)
+
+    preprocessing = get_preprocessing_fn(model_params['encoder'],
+                                                                 pretrained=model_params['encoder_weights'])
+
+    return model, preprocessing
 
 # def get_segmententation_model(encoder_name='resnet34', decoder_name=None, decoder_kwargs=None,
 #                               activation='sigmoid',
