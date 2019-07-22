@@ -19,14 +19,14 @@ encoders.update(densenet_encoders)
 encoders.update(inception_encoders)
 
 
-def get_encoder(name, encoder_weights=None):
+def get_encoder(name, encoder_weights=None, model_dir=None):
     Encoder = encoders[name]['encoder']
     encoder = Encoder(**encoders[name]['params'])
     encoder.out_shapes = encoders[name]['out_shapes']
 
     if encoder_weights is not None:
         settings = encoders[name]['pretrained_settings'][encoder_weights]
-        encoder.load_state_dict(model_zoo.load_url(settings['url']))
+        encoder.load_state_dict(model_zoo.load_url(settings['url'], model_dir=model_dir))
 
     return encoder
 
