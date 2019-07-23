@@ -99,6 +99,15 @@ class SegmentationModel(EncoderDecoder):
 
         return x
 
+    def get_encoder_params(self):
+        return self.encoder.parameters()
+
+    def get_decoder_params(self):
+        return self.decoder.parameters()
+
+    def get_classifier_params(self):
+        return self.encoder_classifier.parameters()
+
 
 class UNet(SegmentationModel):
     decoder_cls = get_decoder_cls('UNET')
