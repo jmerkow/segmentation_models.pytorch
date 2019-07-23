@@ -143,8 +143,10 @@ def get_model(base, **model_params):
     model_cls = models_types[base]
     model = model_cls(**model_params)
 
-    preprocessing = get_preprocessing_fn(model_params['encoder'],
-                                                                 pretrained=model_params['encoder_weights'])
+    encoder_weights = model_params['encoder_weights']
+    preprocessing = None
+    if encoder_weights is not None:
+        preprocessing = get_preprocessing_fn(model_params['encoder'], pretrained=encoder_weights)
 
     return model, preprocessing
 
