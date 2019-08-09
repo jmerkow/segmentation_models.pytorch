@@ -11,6 +11,30 @@ class Flatten(nn.Module):
         return input.reshape(input.size(0), -1)
 
 
+def BasicClassifier(input_shape, classes=1):
+    return nn.Sequential(
+        nn.AdaptiveAvgPool2d((1, 1)),
+        Flatten(),
+        nn.Linear(input_shape, classes),
+    )
+
+
+def LatentLayerClassifier(input_shape, classes=1, num_hidden=1024):
+    return nn.Sequential(
+        nn.AdaptiveAvgPool2d((1, 1)),
+        Flatten(),
+        nn.Linear(input_shape, num_hidden),
+        nn.ReLU(),
+        nn.Linear(num_hidden, classes)
+    )
+
+
+classifier_map = {
+    'basic': BasicClassifier,
+    'latent': LatentLayerClassifier,
+}
+
+
 class SegmentationModel(EncoderDecoder):
     decoder_cls = None
     decoder_defaults = {}
@@ -19,18 +43,11 @@ class SegmentationModel(EncoderDecoder):
     def __init__(self, encoder='resnet34', activation='sigmoid',
                  encoder_weights="imagenet", classes=1,
                  encoder_classify=False, model_dir=None,
+                 encoder_classifier_params=None,
                  decoder_params=None):
-        #
-        # self._init_kwargs = {'__class__': type(self),
-        #     'encoder': encoder_classify,
-        #     'activation': activation,
-        #     'encoder_weights': encoder_weights,
-        #     'classes': classes,
-        #     'encoder_classify': encoder_classify,
-        #     **decoder_kwargs,
-        # }
 
         decoder_params = decoder_params or {}
+        encoder_classifier_params = encoder_classifier_params or {}
 
         self.classes = classes
         encoder_name = encoder
@@ -53,11 +70,17 @@ class SegmentationModel(EncoderDecoder):
         self.encoder_classify = encoder_classify
         self.encoder_classifier = None
         if self.encoder_classify:
-            self.encoder_classifier = nn.Sequential(
-                nn.AdaptiveAvgPool2d((1, 1)),
-                Flatten(),
-                nn.Linear(encoder.out_shapes[0], self.classes),
-            )
+            classifier_type = encoder_classifier_params.get('classifier_type', None)
+            if classifier_type is None:
+                self.encoder_classifier = nn.Sequential(
+                    nn.AdaptiveAvgPool2d((1, 1)),
+                    Flatten(),
+                    nn.Linear(encoder.out_shapes[0], self.classes),
+                )
+            else:
+                klass = classifier_map[classifier_type]
+                self.encoder_classifier = klass(input_shape=encoder.out_shapes[0],
+                                                classes=self.classes, **encoder_classifier_params)
             self.name += "-wclassifier"
 
     def forward(self, x):
