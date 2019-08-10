@@ -2,37 +2,9 @@ import torch
 import torch.nn as nn
 
 from segmentation_models.encoder_decoder.base import EncoderDecoder
+from segmentation_models.encoder_decoder.utils import Flatten, classifier_map
 from ..decoders import get_decoder_cls
 from ..encoders import get_encoder, get_preprocessing_fn
-
-
-class Flatten(nn.Module):
-    def forward(self, input):
-        return input.reshape(input.size(0), -1)
-
-
-def BasicClassifier(input_shape, classes=1):
-    return nn.Sequential(
-        nn.AdaptiveAvgPool2d((1, 1)),
-        Flatten(),
-        nn.Linear(input_shape, classes),
-    )
-
-
-def LatentLayerClassifier(input_shape, classes=1, num_hidden=1024):
-    return nn.Sequential(
-        nn.AdaptiveAvgPool2d((1, 1)),
-        Flatten(),
-        nn.Linear(input_shape, num_hidden),
-        nn.ReLU(),
-        nn.Linear(num_hidden, classes)
-    )
-
-
-classifier_map = {
-    'basic': BasicClassifier,
-    'latent': LatentLayerClassifier,
-}
 
 
 class SegmentationModel(EncoderDecoder):
@@ -70,7 +42,7 @@ class SegmentationModel(EncoderDecoder):
         self.encoder_classify = encoder_classify
         self.encoder_classifier = None
         if self.encoder_classify:
-            classifier_type = encoder_classifier_params.get('classifier_type', None)
+            classifier_type = encoder_classifier_params.pop('classifier_type', None)
             if classifier_type is None:
                 self.encoder_classifier = nn.Sequential(
                     nn.AdaptiveAvgPool2d((1, 1)),
