@@ -134,13 +134,20 @@ class FPN(SegmentationModel):
     name = 'fpn-{}'
 
 
+class VDeepLab(SegmentationModel):
+    decoder_cls = get_decoder_cls('DEEPLAB')
+    decoder_defaults = {"decoder_channels": (256, 48), "output_stride": 8}
+    name = 'vdeeplab-{}'
+
 
 models_types = {
     'unet': UNet,
     'pspnet': PSPNet,
     'linknet': LinkNet,
-    'fpn': FPN
+    'fpn': FPN,
+    'vdeeplab': VDeepLab,
 }
+
 
 def get_model(base, **model_params):
     base = base.lower()
