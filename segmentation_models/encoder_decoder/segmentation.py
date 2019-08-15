@@ -140,12 +140,19 @@ class VDeepLab(SegmentationModel):
     name = 'vdeeplab-{}'
 
 
+class UNetPP(SegmentationModel):
+    decoder_defaults = {'decoder_channels': (256, 128, 64, 32, 16), 'upsample_mode': 'bilinear', 'dropout': 0}
+    name = 'unetpp-{}'
+    decoder_cls = get_decoder_cls('UNETPP')
+
+
 models_types = {
     'unet': UNet,
     'pspnet': PSPNet,
     'linknet': LinkNet,
     'fpn': FPN,
     'vdeeplab': VDeepLab,
+    'unetpp': UNetPP,
 }
 
 
