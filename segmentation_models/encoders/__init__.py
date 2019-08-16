@@ -1,15 +1,16 @@
 import functools
+
 import torch.utils.model_zoo as model_zoo
 
-from .resnet import resnet_encoders
-from .dpn import dpn_encoders
-from .vgg import vgg_encoders
-from .senet import senet_encoders
-from .densenet import densenet_encoders
-from .inceptionresnetv2 import inception_encoders
-from .xception import xception_encoders
-
 from ._preprocessing import preprocess_input
+from .densenet import densenet_encoders
+from .dpn import dpn_encoders
+from .efficientnet import efficientnet_encoders
+from .inceptionresnetv2 import inception_encoders
+from .resnet import resnet_encoders
+from .senet import senet_encoders
+from .vgg import vgg_encoders
+from .xception import xception_encoders
 
 encoders = {}
 encoders.update(resnet_encoders)
@@ -19,6 +20,7 @@ encoders.update(senet_encoders)
 encoders.update(densenet_encoders)
 encoders.update(inception_encoders)
 encoders.update(xception_encoders)
+encoders.update(efficientnet_encoders)
 
 
 def get_encoder(name, encoder_weights=None, model_dir=None):
