@@ -41,6 +41,7 @@ class SegmentationModel(EncoderDecoder):
         self.name = self.name.format(encoder_name)
         self.encoder_classify = encoder_classify
         self.encoder_classifier = None
+        self.required_inputs = []
         if self.encoder_classify:
             classifier_type = encoder_classifier_params.pop('classifier_type', None)
             if classifier_type is None:
@@ -53,18 +54,21 @@ class SegmentationModel(EncoderDecoder):
                 klass = classifier_map[classifier_type]
                 self.encoder_classifier = klass(input_shape=encoder.out_shapes[0],
                                                 classes=self.classes, **encoder_classifier_params)
+
+            self.required_inputs = getattr(self.encoder_classifier, "required_inputs", [])
             self.name += "-wclassifier"
 
-    def forward(self, x):
+    def forward(self, x, **args):
         """Sequentially pass `x` trough model`s `encoder` and `decoder` (return logits!)"""
         features = self.encoder(x)
         mask = self.decoder(features)
         if self.encoder_classify:
-            score = self.encoder_classifier(features[0])
+            scalars = {k: args[k] for k in self.required_inputs}
+            score = self.encoder_classifier(features[0], **args)
             return [mask, score]
         return mask
 
-    def predict(self, x):
+    def predict(self, x, **args):
         """Inference method. Switch model to `eval` mode, call `.forward(x)`
         and apply activation function (if activation is not `None`) with `torch.no_grad()`
 
@@ -79,7 +83,7 @@ class SegmentationModel(EncoderDecoder):
             self.eval()
 
         with torch.no_grad():
-            mask = self.forward(x)
+            mask = self.forward(x, **args)
             score = None
             if self.encoder_classify:
                 mask, score = mask
