@@ -56,7 +56,7 @@ class ExtraScalarInputsClassifier(nn.Module):
 
     def forward(self, encoder_input, **inputs):
         inputs = {k: v for k, v in inputs.items() if v is not None}
-        assert inputs.keys() == self.module_list.keys(), 'incorrect keys input into network'
+        assert all(k in inputs.keys() for k in self.module_list.keys()), 'incorrect keys input into network'
         outputs = [self.pool(encoder_input)]
         for k, fc in self.module_list.items():
             h = self.flatten(fc(inputs[k]))
