@@ -2,16 +2,18 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from segmentation_models.common.blocks import Conv2dReLU
 from segmentation_models.base.model import Model
+from segmentation_models.common.blocks import Conv2dReLU
+from segmentation_models.decoders.hyper_columns import HyperColumnBlock
 
 
 class DecoderBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, use_batchnorm=True):
+    def __init__(self, in_channels, out_channels, use_batchnorm=True, **conv_params):
         super().__init__()
         self.block = nn.Sequential(
-            Conv2dReLU(in_channels, out_channels, kernel_size=3, padding=1, use_batchnorm=use_batchnorm),
-            Conv2dReLU(out_channels, out_channels, kernel_size=3, padding=1, use_batchnorm=use_batchnorm),
+            Conv2dReLU(in_channels, out_channels, kernel_size=3, padding=1, use_batchnorm=use_batchnorm, **conv_params),
+            Conv2dReLU(out_channels, out_channels, kernel_size=3, padding=1, use_batchnorm=use_batchnorm,
+                       **conv_params),
         )
 
     def forward(self, x):
@@ -38,6 +40,7 @@ class UnetDecoder(Model):
             final_channels=1,
             use_batchnorm=True,
             center=False,
+            hyper_columns=False,
     ):
         super().__init__()
 
@@ -55,7 +58,12 @@ class UnetDecoder(Model):
         self.layer3 = DecoderBlock(in_channels[2], out_channels[2], use_batchnorm=use_batchnorm)
         self.layer4 = DecoderBlock(in_channels[3], out_channels[3], use_batchnorm=use_batchnorm)
         self.layer5 = DecoderBlock(in_channels[4], out_channels[4], use_batchnorm=use_batchnorm)
-        self.final_conv = nn.Conv2d(out_channels[4], final_channels, kernel_size=(1, 1))
+
+        if hyper_columns:
+            self.hyper_columns = HyperColumnBlock(decoder_channels, final_channels)
+        else:
+            self.hyper_columns = None
+            self.final_conv = nn.Conv2d(out_channels[4], final_channels, kernel_size=(1, 1))
 
         self.initialize()
 
@@ -76,11 +84,13 @@ class UnetDecoder(Model):
         if self.center:
             encoder_head = self.center(encoder_head)
 
-        x = self.layer1([encoder_head, skips[0]])
-        x = self.layer2([x, skips[1]])
-        x = self.layer3([x, skips[2]])
-        x = self.layer4([x, skips[3]])
-        x = self.layer5([x, None])
-        x = self.final_conv(x)
-
+        x1 = self.layer1([encoder_head, skips[0]])
+        x2 = self.layer2([x1, skips[1]])
+        x3 = self.layer3([x2, skips[2]])
+        x4 = self.layer4([x3, skips[3]])
+        x5 = self.layer5([x4, None])
+        if self.hyper_columns:
+            x = self.hyper_columns([x1, x2, x3, x4, x5])
+        else:
+            x = self.final_conv(x5)
         return x

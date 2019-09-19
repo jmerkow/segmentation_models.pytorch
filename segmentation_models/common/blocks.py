@@ -2,15 +2,22 @@ import torch.nn as nn
 
 
 class Conv2dReLU(nn.Module):
+
     def __init__(self, in_channels, out_channels, kernel_size, padding=0,
-                 stride=1, use_batchnorm=True, **batchnorm_params):
+                 stride=1, use_batchnorm=True,
+                 activation='relu',
+                 negative_slope=1e-2,
+                 **batchnorm_params):
 
+        if activation == 'relu':
+            self._act_fn = lambda: nn.ReLU(inplace=True)
+        elif activation == 'leaky':
+            self._act_fn = lambda: nn.LeakyReLU(negative_slope=negative_slope, inplace=True)
         super().__init__()
-
         layers = [
             nn.Conv2d(in_channels, out_channels, kernel_size,
                               stride=stride, padding=padding, bias=not (use_batchnorm)),
-            nn.ReLU(inplace=True),
+            self._act_fn(),
         ]
 
         if use_batchnorm:
